@@ -4,7 +4,7 @@
 #include<string.h>
 #include<windows.h>
 
-int main() {
+int main1() {
 	//编写代码，演示多个字符从两端移动，向中间汇聚
 	/*char str1[] = "I love gaochennan";
 	char str2[] = "#################";
