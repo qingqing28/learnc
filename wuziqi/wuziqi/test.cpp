@@ -4,100 +4,153 @@
 #include<windows.h>
 #include<string.h>
 #include<time.h>
+#include"wuziqi.h"
 
-#define MAX_SQUARE 15
-//特殊字符，用作打印棋盘和棋子
-static const char ch[11][4] = {"┌","┬","┐","├","┼","└","┴","┤","┘","●","○" };
-//记录每位玩家下棋位置
-static int Record[MAX_SQUARE][MAX_SQUARE] = { 0 };
-static int Score[MAX_SQUARE][MAX_SQUARE] = { 0 };
-static int Sum = 0, Renum = 0;
-
-
-void setScr() {
-	system("pause > nul2 > nul1");
-	system("cls");
-	system("c:\\windows\\system32\\mode.com con cols=43 lines=20");
-	system("color 8f");
-}
-
-int menu() {
-	system("cls");
-	system("c:\\windows\\system32\\mode.com con cols=56 lines=20");
-	system("color 8f");
-	system("title 五子棋游戏");
-	printf("┌  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ┐\n");
-	printf("│            简单五子棋             │\n");
-	printf("│[1]、单机游戏                      │\n");
-	printf("│[2]、双人游戏                      │\n");
-	printf("│[3]、游戏介绍                      │\n");
-	printf("│[4]、退出                          │\n");
-	printf("└  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ┘\n");
-	printf("请选择：");
-	int choice;
-	scanf("%d",&choice);
-	return choice;
-}
-void Victory(int number) {
-	system("cls");
-	system("c:\\windows\\system32\\mode.com con cols=43 lines=20");
-	//system("color 8f");
-	if (number == 1) {
-		system("color 3f");
-		printf("┌                                     ┐\n");
-		printf("│        恭喜玩家1[黑棋]得胜！        │\n");
-		printf("│                                     │\n");
-		printf("│[胜利玩家]:玩家1                     │\n");
-		printf("│[所属棋子]:黑子                      │\n");
-		printf("│[祝福]:恭喜您赢得了胜利！            │\n");
-		printf("│                                     │\n");
-		printf("└                                     ┘\n");
-	}
-	else if (number == 2) {
-		system("color 6f");
-		printf("┌                                     ┐\n");
-		printf("│        恭喜玩家2[白棋]得胜！        │\n");
-		printf("│                                     │\n");
-		printf("│[胜利玩家]:玩家2                     │\n");
-		printf("│[所属棋子]:白子                      │\n");
-		printf("│[祝福]:恭喜您赢得了胜利！            │\n");
-		printf("│                                     │\n");
-		printf("└                                     ┘\n");
-	}
-	else if (number == 3) {
-		system("color 9f");
-		printf("┌                                     ┐\n");
-		printf("│        恭喜您获得胜利得胜！         │\n");
-		printf("│                                     │\n");
-		printf("│[胜利玩家]:自己                      │\n");
-		printf("│[所属棋子]:黑子                      │\n");
-		printf("│[祝福]:恭喜您赢得了胜利！            │\n");
-		printf("│                                     │\n");
-		printf("└                                     ┘\n");
-	}
-	else if (number == 4) {
-		system("color Bf");
-		printf("┌                                     ┐\n");
-		printf("│           很遗憾您输了！            │\n");
-		printf("│                                     │\n");
-		printf("│[胜利玩家]:电脑                      │\n");
-		printf("│[所属棋子]:白子                      │\n");
-		printf("│[祝福]:很遗憾您输了                  │\n");
-		printf("│                                     │\n");
-		printf("└                                     ┘\n");
-	}
-	else {
-		system("color Cf");
-		printf("┌                                     ┐\n");
-		printf("│                                     │\n");
-		printf("│[胜利玩家]:无（平局）                │\n");
-		printf("│[所属棋子]:黑色或白色                │\n");
-		printf("│[祝福]:棋盘竟然出现了平局！          │\n");
-		printf("│                                     │\n");
-		printf("└                                     ┘\n");
-	}
+//----------单机模式-----------//
+void AIGame(int value[MAX_SQUARE][MAX_SQUARE]) {
+	printf("您选择了单机模式\n");
 	printf("请按任意键继续......");
-	system("pause>nul2>nul");
+	setScr();
+	system("title 五子棋-单机模式");
+	int x = -1, y = -1;  //记录下棋位置
+	int x1 = -1, y1 = -1, x2 = -1, y2 = -1;//x1、y1记录玩家上次下棋位置
+	//x2、y2记录电脑上次下棋位置
+	int player = 0;
+	Sum = 0;  //玩家下棋个数
+	Renum = 0;  //玩家悔棋次数
+
+	//打印初始棋盘
+	PrintBoard(&x, &y, value, player);//打印空棋盘
+	memset(Record, 0, sizeof(Record));//先把落子数清空
+	int flag = 1;
+	while (flag) {
+		printf("黑棋代表玩家\n");
+		printf("请[玩家]输入坐标[-1 -1键表示悔棋]");
+		scanf("%d %d", &x, &y);
+		int check = position(&x, &y);
+		if (x == -1 && y == -1) {
+			//悔棋
+			Retract(x1, y1, x2, y2, value);
+			PrintBoard(&x, &y, value, 0);//打印悔棋后的棋面
+			flag = 1;
+		}
+		else if (check == 1) {
+			printf("对不起，您输入的坐标不正确，请重新输入!\n");
+			continue;
+		}
+		else if (check == 2) {
+			printf("您输入的坐标已经落子，请重新输入！\n");
+		}
+		else {
+			PrintBoard(&x, &y, value, 1);
+			Record[x][y] = 1;
+			x1 = x;  
+			y1 = y;
+			Sum++;
+			if (Win(&x, &y, 1) == 1) {
+				printf("恭喜[玩家]获得胜利\n");
+				printf("本次游戏结束，按任意键继续......\n");
+				system("pause>nul2>nul");
+				Victory(3);
+				flag = 0;
+			}
+			else if (Win(&x, &y, 1) == -1) {
+				printf("难分出胜负，都很厉害\n");
+				printf("本次游戏结束，按任意键继续......\n");
+				system("pause>nul 2>nul");
+				Victory(5);
+				flag = 0;
+			}
+			else if (Win(&x, &y, 1) == 0) {
+				Robot(&x, &y, value);
+				PrintBoard(&x, &y, value, 2);
+				x2 = x;
+				y2 = y;
+				printf("玩家棋子数：%d\n", Sum);
+				printf("[电脑]的棋子落在了[X:%d] [Y:%d]\n", x, y);
+				if (Win(&x, &y, 2) == 1) {
+					printf("很遗憾，电脑获胜了！\n");
+					printf("本次游戏结束，按任意位置继续......\n");
+					system("pause>nul2>nul");
+					Victory(4);
+					flag = 0;
+				}
+				else if (Win(&x, &y, 2) == -1) {
+					printf("难分出胜负，都很厉害！\n");
+					printf("本次游戏结束，按任意位置继续......\n");
+					system("pause>nul2>nul");
+					Victory(5);
+					flag = 0;
+				}
+				else {
+					flag = 1;
+				}
+
+			}
+		}
+	}
+
+}
+
+//-----------双人模式-------------//
+void doubleGame(int value[MAX_SQUARE][MAX_SQUARE]) {
+
+	printf("您选择了双人模式\n");
+	printf("请按任意键继续......");
+	setScr();
+	system("title 五子棋-双人模式");
+
+	int x = -1, y = -1;
+	int player = 0;
+	//打印初始棋盘
+	PrintBoard(&x, &y, value, player);
+	memset(Record, 0, sizeof(Record));
+	int flag = 1;
+	while (flag) {
+		//判断应该是哪个玩家该走
+		//判断玩家落子是否合法，如果不合法则进行异常处理，否则进行落子
+		//判断是否胜出，胜出或和棋则结束，否则继续循环
+		player = nextPlayer();
+		printf("请[玩家%d]输入坐标（用空格隔开）:", player);
+		scanf("%d %d", &x, &y);
+		int check = position(&x, &y);
+		if (check == 1) {
+			printf("对不起，您输入的坐标不正确，请重新输入!\n");
+			flag = 1;
+			continue;
+		}
+		else if (check == 2) {
+			printf("您输入的坐标已经落子，请重新输入！\n");
+			flag = 1;
+		}
+		else {
+			PrintBoard(&x, &y, value, player);
+			Record[x][y] = player;
+			printf("玩家[%d]的棋子落在了：[X:%d] [Y:%d]\n", player, x, y);
+			//判断玩家是否获胜，若是获胜则返回1
+			//若是平局则返回-1
+			//否则返回0
+			int result = Win(&x, &y, player);
+			if (result == -1) {
+				printf("游戏和棋了，没分出胜负，都很厉害！\n");
+				printf("本次游戏结束，按任意键继续......\n");
+				system("pause>nul2>nul");
+				Victory(5);
+				flag = 0;
+			}
+			else if (result == 1) {
+				printf("恭喜[玩家%d]赢得胜利！\n", player);
+				printf("本次游戏结束，按任意键继续......\n");
+				system("pause>nul2>nul");
+				Victory(player);
+				flag = 0;
+			}
+			else {
+				flag = 1;
+			}
+
+		}
+	}
 }
 
 void empty(int value[MAX_SQUARE][MAX_SQUARE], int Default[MAX_SQUARE][MAX_SQUARE]) {
@@ -256,7 +309,7 @@ void Retract(int& x1, int& y1 , int& x2, int& y2, int value[MAX_SQUARE][MAX_SQUA
 		printf("请按任意键继续......");
 		system("pause>nul");
 	}
-	else if (Renum >= 6)
+	else if (Renum >= 2)
 	{
 		printf("悔棋超过6次，为了公平，您不能再次悔棋！\n");
 		printf("请按任意键继续......");
@@ -429,7 +482,10 @@ void ChessOne(int& x, int& y, int value[MAX_SQUARE][MAX_SQUARE]) {
 	}
 
 }
-void ChessScore() {
+//计算每一个未下棋位置的得分，得分越高则越应将棋下在该位置
+//这个得分与每一条线上的对方玩家下棋数和自己的下棋数有关
+void 
+ChessScore() {
 	int x, y, i, j, k;
 	int number1 = 0, number2 = 0;
 	int empty = 0;
@@ -497,8 +553,6 @@ void ChessScore() {
 							}
 							else if (number1 >= 4) {								
 									Score[x][y] += 1000;	
-								
-								
 							}
 							empty = 0;
 							for (k = 1; k <= 4; k++) {
@@ -567,9 +621,11 @@ void ChessScore() {
 		}
 	}
 }
+//找到得分的最大位置，若用重复则用随机数来确定选择哪一个下棋点
 void Findscore(int& x, int& y) {
 	srand((unsigned)time(NULL));
 	int i, j, x1, x2, y1, y2, lx;
+	//x1与y1表示第一次找到的最大得分位置的坐标
 	int max = 0;
 	ChessScore();
 	for (i = 0; i < MAX_SQUARE; i++) {
@@ -583,9 +639,11 @@ void Findscore(int& x, int& y) {
 	}
 	x2 = x1;
 	y2 = y1;
+	//寻找是否有重复的最大位置点
 	for (i = 0; i < MAX_SQUARE; i++) {
 		for (j = 0; j < MAX_SQUARE; j++) {
 			if (Score[i][j] == max && i!= x2 && j != y2) {
+				//产生随机数来确定是否更新坐标位置
 				lx = rand() % 10;
 				if (lx < 5) {
 					x2 = i;
@@ -596,6 +654,7 @@ void Findscore(int& x, int& y) {
 		}
 	}
 	if (x2 != x1 || y2 != y1) {
+		//产生随机数来判断使用哪一个位置来下棋
 		lx = rand() % 10;
 		if (lx > 6) {
 			x = x1;
@@ -613,6 +672,7 @@ void Findscore(int& x, int& y) {
 	max = 0;
 	Record[x][y] = 2;
 }
+
 //----------机器人落子函数-----------//
 void Robot(int* x, int* y, int value[MAX_SQUARE][MAX_SQUARE]) {
 	int flag = 1;
@@ -630,150 +690,67 @@ void Robot(int* x, int* y, int value[MAX_SQUARE][MAX_SQUARE]) {
 	}
 }
 
-//----------单机模式-----------//
-void AIGame(int value[MAX_SQUARE][MAX_SQUARE]) {
-	printf("您选择了单机模式\n");
-	printf("请按任意键继续......");
-	setScr();
-	system("title 五子棋-单机模式");
-	int x = -1, y = -1;
-	int x1 = -1, y1 = -1 , x2 = -1 , y2 = -1;
-	int player = 0;
-	Sum = 0;
-	Renum = 0;
 
-	//打印初始棋盘
-	PrintBoard(&x, &y, value, player);//打印空棋盘
-	memset(Record, 0, sizeof(Record));//先把落子数清空
-	int flag = 1;
-	while (flag) {
-		printf("黑棋代表玩家\n");
-		printf("请[玩家]输入坐标[-1 -1键表示悔棋]");
-		scanf("%d %d", &x, &y);
-		int check = position(&x, &y);
-		if (x == -1 && y == -1) {
-			//悔棋
-			Retract(x1 , y1 , x2 , y2 , value);
-			PrintBoard(&x, &y, value, 0);//打印悔棋后的棋面
-			flag = 1;
-		}
-		else if (check == 1) {
-			printf("对不起，您输入的坐标不正确，请重新输入!\n");
-			continue;
-		}
-		else if (check == 2) {
-			printf("您输入的坐标已经落子，请重新输入！\n");
-		}
-		else {
-			PrintBoard(&x, &y, value, 1);
-			Record[x][y] = 1;
-			x1 = x;
-			y1 = y;
-			Sum++;
-			if (Win(&x, &y, 1) == 1) {
-				printf("恭喜[玩家]获得胜利\n");
-				printf("本次游戏结束，按任意键继续......\n");
-				system("pause>nul2>nul");
-				Victory(3);
-				flag = 0;
-			}
-			else if (Win(&x, &y, 1) == -1) {
-				printf("难分出胜负，都很厉害\n");
-				printf("本次游戏结束，按任意键继续......\n");
-				system("pause>nul 2>nul");
-				Victory(5);
-				flag = 0;
-			}
-			else if (Win(&x, &y, 1) == 0) {
-				Robot(&x, &y, value);
-				PrintBoard(&x, &y, value, 2);
-				x2 = x;
-				y2 = y;
-				printf("玩家棋子数：%d\n", Sum);
-				printf("[电脑]的棋子落在了[X:%d] [Y:%d]\n", x, y);
-				if (Win(&x, &y, 2) == 1) {
-					printf("很遗憾，电脑获胜了！\n");
-					printf("本次游戏结束，按任意位置继续......\n");
-					system("pause>nul2>nul");
-					Victory(4);
-					flag = 0;
-				}
-				else if (Win(&x, &y, 2) == -1) {
-					printf("难分出胜负，都很厉害！\n");
-					printf("本次游戏结束，按任意位置继续......\n");
-					system("pause>nul2>nul");
-					Victory(5);
-					flag = 0;
-				}
-				else {
-					flag = 1;
-				}
-
-			}
-		}
+void Victory(int number) {
+	system("cls");
+	system("c:\\windows\\system32\\mode.com con cols=43 lines=20");
+	//system("color 8f");
+	if (number == 1) {
+		system("color 3f");
+		printf("┌                                     ┐\n");
+		printf("│        恭喜玩家1[黑棋]得胜！        │\n");
+		printf("│                                     │\n");
+		printf("│[胜利玩家]:玩家1                     │\n");
+		printf("│[所属棋子]:黑子                      │\n");
+		printf("│[祝福]:恭喜您赢得了胜利！            │\n");
+		printf("│                                     │\n");
+		printf("└                                     ┘\n");
 	}
-	
-}
-
-//-----------双人模式-------------//
-void doubleGame(int value[MAX_SQUARE][MAX_SQUARE]) {
-
-	printf("您选择了双人模式\n" );
-	printf("请按任意键继续......");
-	setScr();
-	system("title 五子棋-双人模式");
-	
-	int x = -1 , y = -1 ;
-	int player = 0;
-	//打印初始棋盘
-	PrintBoard(&x , &y , value , player);
-	memset(Record, 0, sizeof(Record));
-	int flag = 1;
-	while (flag) {
-		//判断应该是哪个玩家该走
-		//判断玩家落子是否合法，如果不合法则进行异常处理，否则进行落子
-		//判断是否胜出，胜出或和棋则结束，否则继续循环
-		player = nextPlayer();
-		printf("请[玩家%d]输入坐标（用空格隔开）:" , player);
-		scanf("%d %d" , &x , &y);
-		int check = position(&x, &y);
-		if (check == 1) {
-			printf("对不起，您输入的坐标不正确，请重新输入!\n");
-			flag = 1;
-			continue;
-		}
-		else if (check == 2) {
-			printf("您输入的坐标已经落子，请重新输入！\n");
-			flag = 1;
-		}
-		else {
-			PrintBoard(&x, &y, value, player);
-			Record[x][y] = player;
-			printf("玩家[%d]的棋子落在了：[X:%d] [Y:%d]\n" , player , x , y);
-			//判断玩家是否获胜，若是获胜则返回1
-			//若是平局则返回-1
-			//否则返回0
-			int result = Win(&x, &y, player);
-			if (result == -1) {
-				printf("游戏和棋了，没分出胜负，都很厉害！\n");
-				printf("本次游戏结束，按任意键继续......\n");
-				system("pause>nul2>nul");
-				Victory(5);
-				flag = 0;
-			}
-			else if (result == 1) {
-				printf("恭喜[玩家%d]赢得胜利！\n",player);
-				printf("本次游戏结束，按任意键继续......\n");
-				system("pause>nul2>nul");
-				Victory(player);
-				flag = 0;
-			}
-			else {
-				flag = 1;
-			}
-
-		}
+	else if (number == 2) {
+		system("color 6f");
+		printf("┌                                     ┐\n");
+		printf("│        恭喜玩家2[白棋]得胜！        │\n");
+		printf("│                                     │\n");
+		printf("│[胜利玩家]:玩家2                     │\n");
+		printf("│[所属棋子]:白子                      │\n");
+		printf("│[祝福]:恭喜您赢得了胜利！            │\n");
+		printf("│                                     │\n");
+		printf("└                                     ┘\n");
 	}
+	else if (number == 3) {
+		system("color 9f");
+		printf("┌                                     ┐\n");
+		printf("│        恭喜您获得胜利得胜！         │\n");
+		printf("│                                     │\n");
+		printf("│[胜利玩家]:自己                      │\n");
+		printf("│[所属棋子]:黑子                      │\n");
+		printf("│[祝福]:恭喜您赢得了胜利！            │\n");
+		printf("│                                     │\n");
+		printf("└                                     ┘\n");
+	}
+	else if (number == 4) {
+		system("color Bf");
+		printf("┌                                     ┐\n");
+		printf("│           很遗憾您输了！            │\n");
+		printf("│                                     │\n");
+		printf("│[胜利玩家]:电脑                      │\n");
+		printf("│[所属棋子]:白子                      │\n");
+		printf("│[祝福]:很遗憾您输了                  │\n");
+		printf("│                                     │\n");
+		printf("└                                     ┘\n");
+	}
+	else {
+		system("color Cf");
+		printf("┌                                     ┐\n");
+		printf("│                                     │\n");
+		printf("│[胜利玩家]:无（平局）                │\n");
+		printf("│[所属棋子]:黑色或白色                │\n");
+		printf("│[祝福]:棋盘竟然出现了平局！          │\n");
+		printf("│                                     │\n");
+		printf("└                                     ┘\n");
+	}
+	printf("请按任意键继续......");
+	system("pause>nul2>nul");
 }
 
 void endGame() {
@@ -806,8 +783,30 @@ void notice(int value[MAX_SQUARE][MAX_SQUARE]) {
 	system("pause>nul>nul 2>nul");
 }
 
-typedef void(*fun)(int value[MAX_SQUARE][MAX_SQUARE]);
+void setScr() {
+	system("pause > nul2 > nul1");
+	system("cls");
+	system("c:\\windows\\system32\\mode.com con cols=43 lines=20");
+	system("color 8f");
+}
 
+int menu() {
+	system("cls");
+	system("c:\\windows\\system32\\mode.com con cols=56 lines=20");
+	system("color 8f");
+	system("title 五子棋游戏");
+	printf("┌  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ┐\n");
+	printf("│            简单五子棋             │\n");
+	printf("│[1]、单机游戏                      │\n");
+	printf("│[2]、双人游戏                      │\n");
+	printf("│[3]、游戏介绍                      │\n");
+	printf("│[4]、退出                          │\n");
+	printf("└  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ┘\n");
+	printf("请选择：");
+	int choice;
+	scanf("%d", &choice);
+	return choice;
+}
 
 
 int main() {
